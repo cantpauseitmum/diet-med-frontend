@@ -3,8 +3,8 @@
  * Obsługa formularza, 1-godzinnego cache'owania listy dolegliwości oraz pobierania raportu PDF.
  */
 
-const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache';
-const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry';
+const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v2';
+const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v2';
 const ONE_HOUR_MS = 60 * 60 * 1000; // 3600 sekund = 1 godzina
 
 // Stan aplikacji
@@ -64,9 +64,11 @@ async function loadAilments() {
     // Dane w cache są nadal ważne (mniej niż 1h)
     try {
       const data = JSON.parse(cachedDataStr);
-      state.dolegliwosci = data;
-      renderAilments(data);
-      return;
+      if (Array.isArray(data) && data.length > 0 && data[0].dostepna !== undefined) {
+        state.dolegliwosci = data;
+        renderAilments(data);
+        return;
+      }
     } catch (e) {
       console.warn('Błąd parsowania cache, pobieram z serwera:', e);
     }
@@ -125,15 +127,23 @@ function renderAilments(ailments) {
   elements.ailmentsList.innerHTML = '';
 
   ailments.forEach((item) => {
+    const isAvailable = item.dostepna !== false;
     const row = document.createElement('div');
     row.className = 'ailment-row';
     row.id = `ailment-row-${item.id}`;
 
-    const currentVal = state.answers[item.id] || null;
+    if (!isAvailable) {
+      row.classList.add('disabled-ailment');
+    }
+
+    const currentVal = isAvailable ? (state.answers[item.id] || null) : null;
     if (currentVal === 'tak') row.classList.add('selected-tak');
 
     row.innerHTML = `
-      <div class="ailment-name">${escapeHtml(item.kod)}</div>
+      <div class="ailment-name-col">
+        <div class="ailment-name">${escapeHtml(item.kod)}</div>
+        ${!isAvailable ? '<span class="ailment-status-badge" title="W bazie danych brakuje tabeli z produktami dla tej dolegliwości">Brak tabeli w bazie</span>' : ''}
+      </div>
       <div class="options-group" role="radiogroup" aria-label="${escapeHtml(item.kod)}">
         <button 
           type="button" 
@@ -141,6 +151,7 @@ function renderAilments(ailments) {
           data-id="${item.id}" 
           data-value="tak"
           aria-checked="${currentVal === 'tak'}"
+          ${!isAvailable ? 'disabled title="Dolegliwość niedostępna - brak tabeli w bazie danych"' : ''}
         >Tak</button>
         <button 
           type="button" 
@@ -148,6 +159,7 @@ function renderAilments(ailments) {
           data-id="${item.id}" 
           data-value="nie"
           aria-checked="${currentVal === 'nie'}"
+          ${!isAvailable ? 'disabled title="Dolegliwość niedostępna - brak tabeli w bazie danych"' : ''}
         >Nie</button>
         <button 
           type="button" 
@@ -155,18 +167,21 @@ function renderAilments(ailments) {
           data-id="${item.id}" 
           data-value="nie_wiem"
           aria-checked="${currentVal === 'nie_wiem'}"
+          ${!isAvailable ? 'disabled title="Dolegliwość niedostępna - brak tabeli w bazie danych"' : ''}
         >Nie wiem</button>
       </div>
     `;
 
-    // Obsługa kliknięcia przycisków
-    const buttons = row.querySelectorAll('.option-btn');
-    buttons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const val = btn.getAttribute('data-value');
-        handleOptionSelect(item.id, val, row);
+    // Obsługa kliknięcia przycisków tylko dla dostępnych dolegliwości
+    if (isAvailable) {
+      const buttons = row.querySelectorAll('.option-btn');
+      buttons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const val = btn.getAttribute('data-value');
+          handleOptionSelect(item.id, val, row);
+        });
       });
-    });
+    }
 
     elements.ailmentsList.appendChild(row);
   });
@@ -178,6 +193,9 @@ function renderAilments(ailments) {
  * Zaznaczenie opcji Tak / Nie / Nie wiem
  */
 function handleOptionSelect(id, value, rowElement) {
+  const item = state.dolegliwosci.find(a => a.id === id);
+  if (item && item.dostepna === false) return; // Ochrona przed wyborem niedostępnej pozycji
+
   state.answers[id] = value;
 
   // Aktualizacja klas przycisków w wierszu
@@ -198,7 +216,15 @@ function handleOptionSelect(id, value, rowElement) {
  * Aktualizacja licznika zaznaczonych na "Tak"
  */
 function updateSelectedCount() {
-  const takCount = Object.values(state.answers).filter(val => val === 'tak').length;
+  const availableIds = new Set(
+    state.dolegliwosci
+      .filter(a => a.dostepna !== false)
+      .map(a => a.id)
+  );
+
+  const takCount = Object.keys(state.answers)
+    .filter(id => state.answers[id] === 'tak' && availableIds.has(Number(id)))
+    .length;
   elements.selectedCount.textContent = takCount;
 }
 
@@ -208,9 +234,15 @@ function updateSelectedCount() {
 async function handleFormSubmit(e) {
   e.preventDefault();
 
-  // Wyfiltrowanie WYŁĄCZNIE ID dolegliwości zaznaczonych jako "tak" (reszta zbędna)
+  const availableIds = new Set(
+    state.dolegliwosci
+      .filter(a => a.dostepna !== false)
+      .map(a => a.id)
+  );
+
+  // Wyfiltrowanie WYŁĄCZNIE ID dostępnych dolegliwości zaznaczonych jako "tak"
   const takIds = Object.keys(state.answers)
-    .filter(id => state.answers[id] === 'tak')
+    .filter(id => state.answers[id] === 'tak' && availableIds.has(Number(id)))
     .map(id => Number(id));
 
   const payload = {

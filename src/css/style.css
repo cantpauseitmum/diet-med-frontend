@@ -415,6 +415,56 @@ a:hover {
   text-transform: capitalize;
 }
 
+.ailment-name-col {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ailment-status-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  border: 1px solid #e2e8f0;
+  padding: 2px 7px;
+  border-radius: 2px;
+  user-select: none;
+}
+
+/* Styl dla wyszarzonej dolegliwości, gdy brakuje tabeli w bazie danych */
+.ailment-row.disabled-ailment {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ailment-row.disabled-ailment:hover {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.ailment-row.disabled-ailment .ailment-name {
+  color: #94a3b8;
+}
+
+.ailment-row.disabled-ailment .option-btn {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+  color: #cbd5e1;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ailment-row.disabled-ailment .option-btn:hover {
+  background-color: #f8fafc;
+  color: #cbd5e1;
+}
+
 /* Przyciski Tak / Nie / Nie wiem */
 .options-group {
   display: flex;
