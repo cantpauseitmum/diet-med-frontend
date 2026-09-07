@@ -16,8 +16,6 @@ const state = {
 // Elementy DOM
 const elements = {
   ailmentsList: document.getElementById('ailmentsList'),
-  cacheStatusText: document.getElementById('cacheStatusText'),
-  refreshCacheBtn: document.getElementById('refreshCacheBtn'),
   tdpForm: document.getElementById('tdpForm'),
   selectedCount: document.getElementById('selectedCount'),
   submitBtn: document.getElementById('submitBtn'),
@@ -40,10 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
  * Konfiguracja nasłuchu zdarzeń
  */
 function setupEventListeners() {
-  elements.refreshCacheBtn.addEventListener('click', () => {
-    fetchAilmentsFromBackend(true);
-  });
-
   elements.tdpForm.addEventListener('submit', handleFormSubmit);
 
   elements.closeModalBtn.addEventListener('click', closeModal);
@@ -64,10 +58,6 @@ async function loadAilments() {
     // Dane w cache są nadal ważne (mniej niż 1h)
     try {
       const data = JSON.parse(cachedDataStr);
-      const remainingMinutes = Math.round((Number(cachedExpiryStr) - now) / 60000);
-      const expiryDate = new Date(Number(cachedExpiryStr)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
-      updateCacheStatus(`Paczka z pamięci podręcznej (ważna do ${expiryDate}, jeszcze ${remainingMinutes} min)`);
       state.dolegliwosci = data;
       renderAilments(data);
       return;
@@ -77,14 +67,13 @@ async function loadAilments() {
   }
 
   // W przeciwnym razie: dane wygasły lub to pierwsze otwarcie
-  await fetchAilmentsFromBackend(false);
+  await fetchAilmentsFromBackend();
 }
 
 /**
  * Pobiera paczkę danych z backendu przez API (/api/dolegliwosci)
  */
-async function fetchAilmentsFromBackend(isManualRefresh = false) {
-  updateCacheStatus('Pobieranie świeżych danych z bazy...');
+async function fetchAilmentsFromBackend() {
   elements.ailmentsList.innerHTML = `
     <div class="skeleton-loader">
       <div class="skeleton-line"></div>
@@ -108,25 +97,14 @@ async function fetchAilmentsFromBackend(isManualRefresh = false) {
     state.dolegliwosci = ailments;
     renderAilments(ailments);
 
-    const expiryTimeStr = new Date(expiryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    updateCacheStatus(`Świeże dane z bazy (ważne do ${expiryTimeStr})`);
-
   } catch (err) {
     console.error('Błąd pobierania dolegliwości:', err);
-    updateCacheStatus('Nie udało się połączyć z bazą. Spróbuj ponownie.');
     elements.ailmentsList.innerHTML = `
       <div style="text-align: center; padding: 20px; color: var(--color-accent);">
         Wystąpił błąd podczas ładowania listy dolegliwości z serwera. Upewnij się, że backend jest uruchomiony.
       </div>
     `;
   }
-}
-
-/**
- * Aktualizuje tekst w pasku statusu cache
- */
-function updateCacheStatus(message) {
-  elements.cacheStatusText.textContent = message;
 }
 
 /**
