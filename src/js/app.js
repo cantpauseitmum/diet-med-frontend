@@ -1,6 +1,6 @@
 /**
  * Diet-Med • Test Doboru Produktów dla Zdrowia (TDP)
- * Obsługa formularza, 1-godzinnego cache'owania listy dolegliwości oraz wysyłki zgłoszenia.
+ * Obsługa formularza, 1-godzinnego cache'owania listy dolegliwości oraz pobierania raportu PDF.
  */
 
 const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache';
@@ -10,8 +10,7 @@ const ONE_HOUR_MS = 60 * 60 * 1000; // 3600 sekund = 1 godzina
 // Stan aplikacji
 const state = {
   dolegliwosci: [],
-  answers: {}, // id -> 'tak' | 'nie' | 'nie_wiem'
-  email: ''
+  answers: {} // id -> 'tak' | 'nie' | 'nie_wiem'
 };
 
 // Elementy DOM
@@ -20,8 +19,6 @@ const elements = {
   cacheStatusText: document.getElementById('cacheStatusText'),
   refreshCacheBtn: document.getElementById('refreshCacheBtn'),
   tdpForm: document.getElementById('tdpForm'),
-  userEmail: document.getElementById('userEmail'),
-  emailError: document.getElementById('emailError'),
   selectedCount: document.getElementById('selectedCount'),
   submitBtn: document.getElementById('submitBtn'),
   resultModal: document.getElementById('resultModal'),
@@ -45,11 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupEventListeners() {
   elements.refreshCacheBtn.addEventListener('click', () => {
     fetchAilmentsFromBackend(true);
-  });
-
-  elements.userEmail.addEventListener('input', () => {
-    elements.emailError.textContent = '';
-    elements.userEmail.classList.remove('has-error');
   });
 
   elements.tdpForm.addEventListener('submit', handleFormSubmit);
@@ -95,9 +87,9 @@ async function fetchAilmentsFromBackend(isManualRefresh = false) {
   updateCacheStatus('Pobieranie świeżych danych z bazy...');
   elements.ailmentsList.innerHTML = `
     <div class="skeleton-loader">
-      <div class="skeleton-row"></div>
-      <div class="skeleton-row"></div>
-      <div class="skeleton-row"></div>
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line"></div>
     </div>
   `;
 
@@ -123,7 +115,7 @@ async function fetchAilmentsFromBackend(isManualRefresh = false) {
     console.error('Błąd pobierania dolegliwości:', err);
     updateCacheStatus('Nie udało się połączyć z bazą. Spróbuj ponownie.');
     elements.ailmentsList.innerHTML = `
-      <div style="text-align: center; padding: 20px; color: var(--accent-rose);">
+      <div style="text-align: center; padding: 20px; color: var(--color-accent);">
         Wystąpił błąd podczas ładowania listy dolegliwości z serwera. Upewnij się, że backend jest uruchomiony.
       </div>
     `;
@@ -142,7 +134,7 @@ function updateCacheStatus(message) {
  */
 function renderAilments(ailments) {
   if (!ailments || ailments.length === 0) {
-    elements.ailmentsList.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">Brak dolegliwości w bazie danych.</div>';
+    elements.ailmentsList.innerHTML = '<div style="color: var(--color-text-muted); text-align: center; padding: 20px;">Brak dolegliwości w bazie danych.</div>';
     return;
   }
 
@@ -227,19 +219,10 @@ function updateSelectedCount() {
 }
 
 /**
- * Obsługa wysyłki formularza
+ * Obsługa wysyłki formularza i generowania PDF
  */
 async function handleFormSubmit(e) {
   e.preventDefault();
-
-  const email = elements.userEmail.value.trim();
-  
-  // Prosta walidacja adresu e-mail
-  if (!email || !isValidEmail(email)) {
-    elements.emailError.textContent = 'Proszę podać poprawny adres e-mail.';
-    elements.userEmail.focus();
-    return;
-  }
 
   // Wyfiltrowanie WYŁĄCZNIE ID dolegliwości zaznaczonych jako "tak" (reszta zbędna)
   const takIds = Object.keys(state.answers)
@@ -247,7 +230,6 @@ async function handleFormSubmit(e) {
     .map(id => Number(id));
 
   const payload = {
-    email: email,
     dolegliwosci: takIds
   };
 
@@ -271,9 +253,19 @@ async function handleFormSubmit(e) {
     const result = await res.json();
     showResultModal(result, takIds);
 
+    // Automatyczne pobranie pliku PDF
+    if (result.pdf_download_url) {
+      const autoDownloadLink = document.createElement('a');
+      autoDownloadLink.href = result.pdf_download_url;
+      autoDownloadLink.download = 'ograniczenia zywieniowe.pdf';
+      document.body.appendChild(autoDownloadLink);
+      autoDownloadLink.click();
+      document.body.removeChild(autoDownloadLink);
+    }
+
   } catch (err) {
-    console.error('Błąd wysyłki:', err);
-    alert(`Wystąpił błąd podczas wysyłania formularza: ${err.message}`);
+    console.error('Błąd generowania PDF:', err);
+    alert(`Wystąpił błąd podczas generowania raportu: ${err.message}`);
   } finally {
     setSubmitLoading(false);
   }
@@ -286,21 +278,19 @@ function setSubmitLoading(isLoading) {
   elements.submitBtn.disabled = isLoading;
   const btnText = elements.submitBtn.querySelector('.btn-text');
   if (isLoading) {
-    btnText.textContent = 'Generowanie pliku PDF i wysyłka...';
+    btnText.textContent = 'Przygotowywanie pliku PDF...';
   } else {
-    btnText.textContent = 'Generuj i wyślij ograniczenia żywieniowe';
+    btnText.textContent = 'Generuj i pobierz raport PDF';
   }
 }
 
 /**
- * Wyświetla modal z podsumowaniem i opcją pobrania PDF
+ * Wyświetla modal z podsumowaniem i opcją ponownego pobrania PDF
  */
 function showResultModal(result, takIds) {
   elements.modalMessage.innerHTML = `
-    Twój spersonalizowany dokument <strong>ograniczenia zywieniowe.pdf</strong> został pomyślnie wygenerowany. 
-    ${result.email_wyslany 
-      ? `Wiadomość została wysłana na adres: <strong>${escapeHtml(result.email)}</strong>.` 
-      : `Plik został przygotowany do pobrania dla adresu <strong>${escapeHtml(result.email)}</strong>.`}
+    Twój spersonalizowany dokument <strong>ograniczenia zywieniowe.pdf</strong> został wygenerowany. 
+    Pobieranie pliku powinno rozpocząć się automatycznie. Jeśli tak się nie stało, kliknij przycisk poniżej.
   `;
 
   elements.modalDetails.innerHTML = `
@@ -325,13 +315,6 @@ function showResultModal(result, takIds) {
 function closeModal() {
   elements.resultModal.classList.remove('show');
   elements.resultModal.setAttribute('aria-hidden', 'true');
-}
-
-/**
- * Pomocnicza walidacja e-mail
- */
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 /**

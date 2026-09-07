@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Test Doboru Produktów (TDP) | Dietetyk Poznań • DIET-MED</title>
-  <meta name="description" content="Indywidualny Test Doboru Produktów dla Zdrowia (TDP) w gabinecie DIET-MED w Poznaniu. Zaznacz swoje dolegliwości i otrzymaj spersonalizowany wykaz ograniczeń żywieniowych w pliku PDF.">
+  <meta name="description" content="Indywidualny Test Doboru Produktów dla Zdrowia (TDP) w gabinecie DIET-MED w Poznaniu. Zaznacz swoje dolegliwości i pobierz spersonalizowany wykaz ograniczeń żywieniowych w pliku PDF.">
   
   <!-- Czcionka Lato zgodna ze stroną diet-med.pl -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -72,7 +72,7 @@
   </section>
 
   <!-- ======================================================== -->
-  <!-- 4. GŁÓWNA ZAWARTOŚĆ (UKŁAD 2-KOLUMNOWY JAK NA KONTAKT)    -->
+  <!-- 4. GŁÓWNA ZAWARTOŚĆ (UKŁAD 2-KOLUMNOWY)                   -->
   <!-- ======================================================== -->
   <main class="page-content">
     <div class="container">
@@ -97,11 +97,11 @@
 
       <div class="content-row">
         
-        <!-- KOLUMNA LEWA: INFORMACJE O TDP I GABINECIE (BLURBY) -->
+        <!-- KOLUMNA LEWA: INFORMACJE O TDP I GABINECIE -->
         <aside class="sidebar-col">
           
           <div class="info-card">
-            <h3 class="card-title">O Testu TDP</h3>
+            <h3 class="card-title">O Teście TDP</h3>
             <div class="card-divider"></div>
             <p class="card-text">
               Test Doboru Produktów dla Zdrowia (TDP) służy do stworzenia indywidualnej listy produktów wg mapy potrzeb organizmu, łącząc poszczególne, współistniejące problemy zdrowotne Pacjenta.
@@ -111,7 +111,7 @@
             </p>
           </div>
 
-          <!-- Dane kontaktowe gabinetu (w stylu diet-med.pl) -->
+          <!-- Dane kontaktowe gabinetu -->
           <div class="blurb-box">
             <div class="blurb-icon">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="#ee5a36"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
@@ -154,20 +154,19 @@
 
         </aside>
 
-        <!-- KOLUMNA PRAWA: FORMULARZ ANKIETY TDP (STYL ET_PB_CONTACT_FORM) -->
+        <!-- KOLUMNA PRAWA: FORMULARZ ANKIETY TDP -->
         <section class="form-col">
           <div class="form-card">
             
             <div class="form-header">
               <h2 class="form-title">Wypełnij Formularz TDP</h2>
               <p class="form-lead">
-                Zaznacz w tabeli problemy zdrowotne, które Ciebie dotyczą. Następnie podaj adres e-mail, na który zostanie przesłany spersonalizowany plik <strong>ograniczenia zywieniowe.pdf</strong>.
+                Zaznacz w tabeli problemy zdrowotne, które Ciebie dotyczą, a następnie kliknij przycisk poniżej, aby natychmiast wygenerować i pobrać spersonalizowany plik <strong>ograniczenia zywieniowe.pdf</strong>.
               </p>
             </div>
 
             <form id="tdpForm" novalidate class="diet-med-contact-form">
               
-              <!-- KROK 1: LISTA DOLEGLIWOŚCI -->
               <div class="form-section">
                 <div class="section-title-wrap">
                   <span class="step-badge">KROK 1</span>
@@ -184,38 +183,6 @@
                 </div>
               </div>
 
-              <!-- KROK 2: ADRES E-MAIL -->
-              <div class="form-section">
-                <div class="section-title-wrap">
-                  <span class="step-badge">KROK 2</span>
-                  <h3 class="sub-title">Adres e-mail do wysyłki raportu</h3>
-                </div>
-
-                <div class="et_contact_field">
-                  <label for="userEmail" class="et_label">Twój adres e-mail <span class="req-star">*</span></label>
-                  <input 
-                    type="email" 
-                    id="userEmail" 
-                    name="email" 
-                    class="et_input" 
-                    placeholder="Wpisz swój adres e-mail (np. jan.kowalski@example.com)" 
-                    required 
-                    autocomplete="email"
-                  >
-                  <div id="emailError" class="error-msg" aria-live="polite"></div>
-                </div>
-              </div>
-
-              <!-- KLAUZULA RODO ZGODNA Z DIET-MED.PL -->
-              <div class="rodo-box">
-                <label class="rodo-checkbox-label">
-                  <input type="checkbox" id="rodoConsent" checked required>
-                  <span class="rodo-text">
-                    Wyrażam zgodę na przetwarzanie moich danych osobowych w celu przygotowania i wysyłki indywidualnego zestawienia ograniczeń żywieniowych w formacie PDF. Administratorem danych jest DIET-MED z siedzibą w Poznaniu. Podanie danych jest dobrowolne.
-                  </span>
-                </label>
-              </div>
-
               <!-- DOLNY PASEK AKCJI -->
               <div class="form-bottom-bar">
                 <div class="summary-pill">
@@ -223,8 +190,8 @@
                 </div>
 
                 <button type="submit" id="submitBtn" class="et_pb_button et_pb_contact_submit">
-                  <span class="btn-text">Wyślij i pobierz raport PDF</span>
-                  <span class="et_button_icon">→</span>
+                  <span class="btn-text">Generuj i pobierz raport PDF</span>
+                  <span class="et_button_icon">↓</span>
                 </button>
               </div>
 
@@ -251,14 +218,14 @@
   </footer>
 
   <!-- ======================================================== -->
-  <!-- 6. MODAL SUKCESU (PO WYGENEROWANIU PDF)                   -->
+  <!-- 6. MODAL SUKCESU Z POBIERANIEM PDF                        -->
   <!-- ======================================================== -->
   <div id="resultModal" class="modal-backdrop" aria-hidden="true">
     <div class="modal-box">
       <div class="modal-badge-icon">✓</div>
-      <h3 class="modal-heading">Raport TDP został przygotowany!</h3>
+      <h3 class="modal-heading">Raport TDP jest gotowy!</h3>
       <p class="modal-body-text" id="modalMessage">
-        Twój indywidualny plik <strong>ograniczenia zywieniowe.pdf</strong> został pomyślnie wygenerowany.
+        Twój indywidualny plik <strong>ograniczenia zywieniowe.pdf</strong> został pomyślnie wygenerowany. Pobieranie powinno rozpocząć się automatycznie.
       </p>
       
       <div class="modal-info-panel" id="modalDetails"></div>
