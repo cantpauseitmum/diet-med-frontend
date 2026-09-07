@@ -341,7 +341,7 @@ a:hover {
   color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .form-lead {
@@ -612,7 +612,7 @@ a:hover {
 /* Pasek dolny formularza */
 .form-bottom-bar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   border-top: 1px solid var(--color-border);
   padding-top: 24px;

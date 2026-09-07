@@ -239,6 +239,7 @@ function handleOptionSelect(id, value, rowElement) {
  * Aktualizacja licznika zaznaczonych na "Tak"
  */
 function updateSelectedCount() {
+  if (!elements.selectedCount) return;
   const availableIds = new Set(
     state.dolegliwosci
       .filter(a => a.dostepna !== false)
