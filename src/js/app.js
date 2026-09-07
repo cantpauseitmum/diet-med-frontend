@@ -21,6 +21,8 @@ const elements = {
   tdpForm: document.getElementById('tdpForm'),
   selectedCount: document.getElementById('selectedCount'),
   submitBtn: document.getElementById('submitBtn'),
+  formValidationError: document.getElementById('formValidationError'),
+  unansweredCount: document.getElementById('unansweredCount'),
   resultModal: document.getElementById('resultModal'),
   modalMessage: document.getElementById('modalMessage'),
   modalDetails: document.getElementById('modalDetails'),
@@ -190,6 +192,14 @@ function renderAilments(ailments) {
 }
 
 /**
+ * Zwraca listę aktywnych (niewyszarzonych) dolegliwości, które nie zostały jeszcze zaznaczone
+ */
+function getUnansweredAvailableAilments() {
+  const availableAilments = state.dolegliwosci.filter(a => a.dostepna !== false);
+  return availableAilments.filter(a => !state.answers[a.id]);
+}
+
+/**
  * Zaznaczenie opcji Tak / Nie / Nie wiem
  */
 function handleOptionSelect(id, value, rowElement) {
@@ -197,6 +207,9 @@ function handleOptionSelect(id, value, rowElement) {
   if (item && item.dostepna === false) return; // Ochrona przed wyborem niedostępnej pozycji
 
   state.answers[id] = value;
+
+  // Usunięcie wyróżnienia błędu z tego wiersza
+  rowElement.classList.remove('unanswered-error');
 
   // Aktualizacja klas przycisków w wierszu
   const buttons = rowElement.querySelectorAll('.option-btn');
@@ -208,6 +221,16 @@ function handleOptionSelect(id, value, rowElement) {
 
   // Stylizacja wiersza jeśli "Tak"
   rowElement.classList.toggle('selected-tak', value === 'tak');
+
+  // Jeśli widoczny był komunikat błędu, aktualizujemy liczbę pozostałych pytań lub go ukrywamy
+  if (elements.formValidationError && elements.formValidationError.style.display !== 'none') {
+    const remaining = getUnansweredAvailableAilments();
+    if (remaining.length === 0) {
+      elements.formValidationError.style.display = 'none';
+    } else if (elements.unansweredCount) {
+      elements.unansweredCount.textContent = remaining.length;
+    }
+  }
 
   updateSelectedCount();
 }
@@ -233,6 +256,35 @@ function updateSelectedCount() {
  */
 async function handleFormSubmit(e) {
   e.preventDefault();
+
+  // Test walidacji: wszystkie aktywne (niewyszarzone) dolegliwości muszą być określone (Tak, Nie lub Nie wiem)
+  const unanswered = getUnansweredAvailableAilments();
+  if (unanswered.length > 0) {
+    // Wyróżnij wszystkie nieuzupełnione aktywne wiersze
+    unanswered.forEach((item) => {
+      const row = document.getElementById(`ailment-row-${item.id}`);
+      if (row) row.classList.add('unanswered-error');
+    });
+
+    // Wyświetl komunikat walidacyjny
+    if (elements.formValidationError) {
+      if (elements.unansweredCount) elements.unansweredCount.textContent = unanswered.length;
+      elements.formValidationError.style.display = 'flex';
+    }
+
+    // Płynnie przewiń stronę do pierwszego nieuzupełnionego pytania
+    const firstUnansweredEl = document.getElementById(`ailment-row-${unanswered[0].id}`);
+    if (firstUnansweredEl) {
+      firstUnansweredEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    return;
+  }
+
+  // Jeśli walidacja przeszła, ukryj komunikat błędu
+  if (elements.formValidationError) {
+    elements.formValidationError.style.display = 'none';
+  }
 
   const availableIds = new Set(
     state.dolegliwosci

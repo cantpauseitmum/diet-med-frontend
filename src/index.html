@@ -171,6 +171,14 @@
                 </div>
               </div>
 
+              <!-- KOMUNIKAT WALIDACJI FORMULARZA -->
+              <div id="formValidationError" class="validation-alert" style="display: none;" role="alert">
+                <span class="validation-alert-icon">⚠️</span>
+                <span class="validation-alert-text">
+                  Aby wygenerować raport PDF, musisz określić wszystkie aktywne dolegliwości (wybierz <strong>Tak</strong>, <strong>Nie</strong> lub <strong>Nie wiem</strong>). Pozostało pytań bez odpowiedzi: <strong id="unansweredCount">0</strong>.
+                </span>
+              </div>
+
               <!-- DOLNY PASEK AKCJI -->
               <div class="form-bottom-bar">
                 <div class="summary-pill">
@@ -179,7 +187,6 @@
 
                 <button type="submit" id="submitBtn" class="et_pb_button et_pb_contact_submit">
                   <span class="btn-text">Generuj raport PDF</span>
-                  <span class="et_button_icon">⚡</span>
                 </button>
               </div>
 

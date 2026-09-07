@@ -573,6 +573,42 @@ a:hover {
   accent-color: var(--color-primary);
 }
 
+/* Komunikat walidacji nieuzupełnionych dolegliwości */
+.validation-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-left: 4px solid var(--color-accent);
+  color: #9f1239;
+  padding: 12px 16px;
+  border-radius: 2px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin-top: 20px;
+}
+
+.validation-alert-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.validation-alert-text strong {
+  color: var(--color-primary);
+}
+
+/* Wyróżnienie nieuzupełnionego wiersza */
+.ailment-row.unanswered-error {
+  border-color: #fda4af !important;
+  background-color: #fff1f2 !important;
+  box-shadow: 0 0 0 1px #f43f5e;
+}
+
+.ailment-row.unanswered-error:hover {
+  background-color: #ffe4e6 !important;
+}
+
 /* Pasek dolny formularza */
 .form-bottom-bar {
   display: flex;
