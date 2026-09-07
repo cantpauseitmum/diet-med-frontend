@@ -149,7 +149,7 @@
             <div class="form-header">
               <h2 class="form-title">Wypełnij Formularz TDP</h2>
               <p class="form-lead">
-                Zaznacz w tabeli problemy zdrowotne, które Ciebie dotyczą, a następnie kliknij przycisk poniżej, aby natychmiast wygenerować i pobrać spersonalizowany plik <strong>ograniczenia zywieniowe.pdf</strong>.
+                Zaznacz w tabeli problemy zdrowotne, które Ciebie dotyczą, a następnie kliknij przycisk poniżej, aby wygenerować spersonalizowany plik <strong>ograniczenia zywieniowe.pdf</strong>.
               </p>
             </div>
 
@@ -178,8 +178,8 @@
                 </div>
 
                 <button type="submit" id="submitBtn" class="et_pb_button et_pb_contact_submit">
-                  <span class="btn-text">Generuj i pobierz raport PDF</span>
-                  <span class="et_button_icon">↓</span>
+                  <span class="btn-text">Generuj raport PDF</span>
+                  <span class="et_button_icon">⚡</span>
                 </button>
               </div>
 
@@ -213,15 +213,16 @@
       <div class="modal-badge-icon">✓</div>
       <h3 class="modal-heading">Raport TDP jest gotowy!</h3>
       <p class="modal-body-text" id="modalMessage">
-        Twój indywidualny plik <strong>ograniczenia zywieniowe.pdf</strong> został pomyślnie wygenerowany. Pobieranie powinno rozpocząć się automatycznie.
+        Twój spersonalizowany dokument <strong>ograniczenia zywieniowe.pdf</strong> został pomyślnie wygenerowany. Kliknij przycisk poniżej, aby pobrać raport.
       </p>
       
       <div class="modal-info-panel" id="modalDetails"></div>
 
       <div class="modal-actions-row">
-        <a id="downloadPdfBtn" href="#" target="_blank" class="et_pb_button btn-download-pdf" download="ograniczenia zywieniowe.pdf">
-          <span>Pobierz plik PDF</span>
-        </a>
+        <button id="downloadPdfBtn" type="button" class="et_pb_button btn-download-pdf">
+          <span class="btn-download-text">Pobierz raport PDF</span>
+          <span class="et_button_icon">↓</span>
+        </button>
         <button id="closeModalBtn" class="btn-outline-modal" type="button">Zamknij</button>
       </div>
     </div>

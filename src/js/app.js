@@ -10,7 +10,9 @@ const ONE_HOUR_MS = 60 * 60 * 1000; // 3600 sekund = 1 godzina
 // Stan aplikacji
 const state = {
   dolegliwosci: [],
-  answers: {} // id -> 'tak' | 'nie' | 'nie_wiem'
+  answers: {}, // id -> 'tak' | 'nie' | 'nie_wiem'
+  currentPdfUrl: null,
+  currentPdfFilename: 'ograniczenia zywieniowe.pdf'
 };
 
 // Elementy DOM
@@ -39,6 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 function setupEventListeners() {
   elements.tdpForm.addEventListener('submit', handleFormSubmit);
+
+  if (elements.downloadPdfBtn) {
+    elements.downloadPdfBtn.addEventListener('click', handleDownloadPdf);
+  }
 
   elements.closeModalBtn.addEventListener('click', closeModal);
   elements.resultModal.addEventListener('click', (e) => {
@@ -229,17 +235,11 @@ async function handleFormSubmit(e) {
     }
 
     const result = await res.json();
-    showResultModal(result, takIds);
+    state.currentPdfUrl = result.pdf_download_url || null;
+    state.currentPdfFilename = 'ograniczenia zywieniowe.pdf';
 
-    // Automatyczne pobranie pliku PDF
-    if (result.pdf_download_url) {
-      const autoDownloadLink = document.createElement('a');
-      autoDownloadLink.href = result.pdf_download_url;
-      autoDownloadLink.download = 'ograniczenia zywieniowe.pdf';
-      document.body.appendChild(autoDownloadLink);
-      autoDownloadLink.click();
-      document.body.removeChild(autoDownloadLink);
-    }
+    // Wyświetlenie modalu z przyciskiem do pobrania raportu (bez automatycznego pobierania)
+    showResultModal(result, takIds);
 
   } catch (err) {
     console.error('Błąd generowania PDF:', err);
@@ -256,19 +256,19 @@ function setSubmitLoading(isLoading) {
   elements.submitBtn.disabled = isLoading;
   const btnText = elements.submitBtn.querySelector('.btn-text');
   if (isLoading) {
-    btnText.textContent = 'Przygotowywanie pliku PDF...';
+    btnText.textContent = 'Generowanie raportu PDF...';
   } else {
-    btnText.textContent = 'Generuj i pobierz raport PDF';
+    btnText.textContent = 'Generuj raport PDF';
   }
 }
 
 /**
- * Wyświetla modal z podsumowaniem i opcją ponownego pobrania PDF
+ * Wyświetla modal z podsumowaniem i opcją pobrania PDF
  */
 function showResultModal(result, takIds) {
   elements.modalMessage.innerHTML = `
-    Twój spersonalizowany dokument <strong>ograniczenia zywieniowe.pdf</strong> został wygenerowany. 
-    Pobieranie pliku powinno rozpocząć się automatycznie. Jeśli tak się nie stało, kliknij przycisk poniżej.
+    Twój spersonalizowany dokument <strong>ograniczenia zywieniowe.pdf</strong> został pomyślnie wygenerowany. 
+    Kliknij przycisk poniżej, aby pobrać raport na swoje urządzenie.
   `;
 
   elements.modalDetails.innerHTML = `
@@ -276,15 +276,64 @@ function showResultModal(result, takIds) {
     <div style="margin-top: 4px;"><strong>Liczba zidentyfikowanych problemów:</strong> ${takIds.length}</div>
   `;
 
-  if (result.pdf_download_url) {
-    elements.downloadPdfBtn.href = result.pdf_download_url;
+  if (state.currentPdfUrl) {
     elements.downloadPdfBtn.style.display = 'inline-flex';
+    elements.downloadPdfBtn.disabled = false;
+    const btnText = elements.downloadPdfBtn.querySelector('.btn-download-text');
+    if (btnText) btnText.textContent = 'Pobierz raport PDF';
   } else {
     elements.downloadPdfBtn.style.display = 'none';
   }
 
   elements.resultModal.classList.add('show');
   elements.resultModal.setAttribute('aria-hidden', 'false');
+}
+
+/**
+ * Obsługa pobierania wygenerowanego pliku PDF z poziomu modalu
+ */
+async function handleDownloadPdf(e) {
+  if (e) e.preventDefault();
+
+  if (!state.currentPdfUrl) {
+    alert('Brak adresu pliku PDF. Wygeneruj raport ponownie.');
+    return;
+  }
+
+  const btnText = elements.downloadPdfBtn.querySelector('.btn-download-text');
+  const originalText = btnText ? btnText.textContent : 'Pobierz raport PDF';
+
+  try {
+    elements.downloadPdfBtn.disabled = true;
+    if (btnText) btnText.textContent = 'Pobieranie...';
+
+    // Pobieranie przez Fetch + Blob gwarantuje niezawodne pobranie na każdej platformie
+    const res = await fetch(state.currentPdfUrl);
+    if (!res.ok) throw new Error(`Błąd pobierania pliku (${res.status})`);
+
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    const tempLink = document.createElement('a');
+    tempLink.style.display = 'none';
+    tempLink.href = blobUrl;
+    tempLink.download = state.currentPdfFilename || 'ograniczenia zywieniowe.pdf';
+    document.body.appendChild(tempLink);
+    tempLink.click();
+
+    setTimeout(() => {
+      document.body.removeChild(tempLink);
+      window.URL.revokeObjectURL(blobUrl);
+    }, 1000);
+
+  } catch (err) {
+    console.error('Błąd pobierania pliku:', err);
+    // Fallback: bezpośrednie przejście
+    window.location.href = state.currentPdfUrl;
+  } finally {
+    elements.downloadPdfBtn.disabled = false;
+    if (btnText) btnText.textContent = originalText;
+  }
 }
 
 /**
