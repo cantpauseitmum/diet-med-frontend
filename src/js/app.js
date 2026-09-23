@@ -12,7 +12,7 @@ const state = {
   dolegliwosci: [],
   answers: {}, // id -> 'tak' | 'nie' | 'nie_wiem'
   currentPdfUrl: null,
-  currentPdfFilename: 'ograniczenia zywieniowe.pdf'
+  currentPdfFilename: 'ograniczenia_zywieniowe.pdf'
 };
 
 // Elementy DOM
@@ -346,7 +346,7 @@ async function handleFormSubmit(e) {
 
     const result = await res.json();
     state.currentPdfUrl = result.pdf_download_url || null;
-    state.currentPdfFilename = 'ograniczenia zywieniowe.pdf';
+    state.currentPdfFilename = result.pdf_filename || 'ograniczenia_zywieniowe.pdf';
 
     // Wyświetlenie modalu z przyciskiem do pobrania raportu (bez automatycznego pobierania)
     showResultModal(result, takIds);
@@ -376,8 +376,9 @@ function setSubmitLoading(isLoading) {
  * Wyświetla modal z podsumowaniem i opcją pobrania PDF
  */
 function showResultModal(result, takIds) {
+  const filename = state.currentPdfFilename || 'ograniczenia_zywieniowe.pdf';
   elements.modalMessage.innerHTML = `
-    Twój spersonalizowany dokument <strong>ograniczenia zywieniowe.pdf</strong> został pomyślnie wygenerowany. 
+    Twój spersonalizowany dokument <strong>${escapeHtml(filename)}</strong> został pomyślnie wygenerowany. 
     Kliknij przycisk poniżej, aby pobrać raport na swoje urządzenie.
   `;
 
@@ -427,7 +428,7 @@ async function handleDownloadPdf(e) {
     const tempLink = document.createElement('a');
     tempLink.style.display = 'none';
     tempLink.href = blobUrl;
-    tempLink.download = state.currentPdfFilename || 'ograniczenia zywieniowe.pdf';
+    tempLink.download = state.currentPdfFilename || 'ograniczenia_zywieniowe.pdf';
     document.body.appendChild(tempLink);
     tempLink.click();
 
