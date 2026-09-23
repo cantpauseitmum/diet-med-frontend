@@ -3,8 +3,8 @@
  * Obsługa formularza, 1-godzinnego cache'owania listy dolegliwości oraz pobierania raportu PDF.
  */
 
-const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v2';
-const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v2';
+const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v3';
+const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v3';
 const ONE_HOUR_MS = 60 * 60 * 1000; // 3600 sekund = 1 godzina
 
 // Stan aplikacji
@@ -29,6 +29,28 @@ const elements = {
   downloadPdfBtn: document.getElementById('downloadPdfBtn'),
   closeModalBtn: document.getElementById('closeModalBtn')
 };
+
+/**
+ * Zwraca unikalną listę dolegliwości wg znormalizowanej nazwy, zapobiegając duplikatom
+ */
+function deduplicateAilments(ailments) {
+  if (!Array.isArray(ailments)) return [];
+  const seen = new Set();
+  const unique = [];
+  for (const item of ailments) {
+    if (!item || !item.kod) continue;
+    const norm = item.kod
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+    if (!seen.has(norm)) {
+      seen.add(norm);
+      unique.push(item);
+    }
+  }
+  return unique;
+}
 
 /**
  * Inicjalizacja aplikacji
@@ -65,8 +87,9 @@ async function loadAilments() {
   if (cachedDataStr && cachedExpiryStr && now < Number(cachedExpiryStr)) {
     // Dane w cache są nadal ważne (mniej niż 1h)
     try {
-      const data = JSON.parse(cachedDataStr);
-      if (Array.isArray(data) && data.length > 0 && data[0].dostepna !== undefined) {
+      const rawData = JSON.parse(cachedDataStr);
+      if (Array.isArray(rawData) && rawData.length > 0 && rawData[0].dostepna !== undefined) {
+        const data = deduplicateAilments(rawData);
         state.dolegliwosci = data;
         renderAilments(data);
         return;
@@ -97,7 +120,8 @@ async function fetchAilmentsFromBackend() {
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     
     const data = await res.json();
-    const ailments = data.dolegliwosci || [];
+    const rawAilments = data.dolegliwosci || [];
+    const ailments = deduplicateAilments(rawAilments);
     
     // Zapisujemy do localStorage z czasem wygaśnięcia 1h
     const expiryTime = Date.now() + (data.expires_in_seconds ? data.expires_in_seconds * 1000 : ONE_HOUR_MS);
@@ -121,14 +145,15 @@ async function fetchAilmentsFromBackend() {
  * Renderuje wiersze dolegliwości w formularzu
  */
 function renderAilments(ailments) {
-  if (!ailments || ailments.length === 0) {
+  const cleanAilments = deduplicateAilments(ailments);
+  if (!cleanAilments || cleanAilments.length === 0) {
     elements.ailmentsList.innerHTML = '<div style="color: var(--color-text-muted); text-align: center; padding: 20px;">Brak dolegliwości w bazie danych.</div>';
     return;
   }
 
   elements.ailmentsList.innerHTML = '';
 
-  ailments.forEach((item) => {
+  cleanAilments.forEach((item) => {
     const isAvailable = item.dostepna !== false;
     const row = document.createElement('div');
     row.className = 'ailment-row';
