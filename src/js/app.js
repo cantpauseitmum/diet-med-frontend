@@ -3,8 +3,8 @@
  * Obsługa formularza, 1-godzinnego cache'owania listy dolegliwości oraz pobierania raportu PDF.
  */
 
-const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v3';
-const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v3';
+const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v4';
+const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v4';
 const ONE_HOUR_MS = 60 * 60 * 1000; // 3600 sekund = 1 godzina
 
 // Stan aplikacji
@@ -169,7 +169,7 @@ function renderAilments(ailments) {
     row.innerHTML = `
       <div class="ailment-name-col">
         <div class="ailment-name">${escapeHtml(item.kod)}</div>
-        ${!isAvailable ? '<span class="ailment-status-badge" title="W bazie danych brakuje tabeli z produktami dla tej dolegliwości">Brak tabeli w bazie</span>' : ''}
+        ${!isAvailable ? '<span class="ailment-status-badge" title="W bazie danych brakuje tabeli z produktami dla tej dolegliwości">Brak tabeli w bazie</span>' : '<span class="ailment-ready-badge" title="Tabela produktów dostępna w 4 kategoriach (Zalecane, Dozwolone, Ograniczone, Zakazane)">Baza aktywna</span>'}
       </div>
       <div class="options-group" role="radiogroup" aria-label="${escapeHtml(item.kod)}">
         <button 
@@ -379,12 +379,45 @@ function showResultModal(result, takIds) {
   const filename = state.currentPdfFilename || 'ograniczenia_zywieniowe.pdf';
   elements.modalMessage.innerHTML = `
     Twój spersonalizowany dokument <strong>${escapeHtml(filename)}</strong> został pomyślnie wygenerowany. 
-    Kliknij przycisk poniżej, aby pobrać raport na swoje urządzenie.
+    Raport zawiera zestawienie produktów podzielonych na 4 kategorie wg aktualnych wytycznych.
   `;
+
+  let statsHtml = '';
+  if (result.statystyki) {
+    const s = result.statystyki;
+    statsHtml = `
+      <div class="modal-stats-container">
+        <div class="modal-stats-title">Zestawienie produktów w raporcie:</div>
+        <div class="modal-stats-grid">
+          <div class="stat-pill stat-zalecane" title="Produkty szczególnie rekomendowane">
+            <span class="stat-icon">★</span>
+            <span class="stat-label">Zalecane:</span>
+            <span class="stat-value">${s.zalecane || 0}</span>
+          </div>
+          <div class="stat-pill stat-dozwolone" title="Produkty dozwolone i bezpieczne">
+            <span class="stat-icon">✓</span>
+            <span class="stat-label">Dozwolone:</span>
+            <span class="stat-value">${s.dozwolone || 0}</span>
+          </div>
+          <div class="stat-pill stat-ograniczone" title="Produkty dopuszczalne w wyznaczonych porcjach">
+            <span class="stat-icon">⚠️</span>
+            <span class="stat-label">Ograniczone:</span>
+            <span class="stat-value">${s.ograniczone || 0}</span>
+          </div>
+          <div class="stat-pill stat-zakazane" title="Produkty przeciwwskazane">
+            <span class="stat-icon">✕</span>
+            <span class="stat-label">Zakazane:</span>
+            <span class="stat-value">${s.zakazane || 0}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   elements.modalDetails.innerHTML = `
     <div><strong>Przeanalizowane dolegliwości:</strong> ${result.dolegliwosci_wybrane && result.dolegliwosci_wybrane.length ? result.dolegliwosci_wybrane.join(', ') : 'Brak zaznaczonych problemów (ogólne zalecenia)'}</div>
-    <div style="margin-top: 4px;"><strong>Liczba zidentyfikowanych problemów:</strong> ${takIds.length}</div>
+    <div style="margin-top: 4px; margin-bottom: 8px;"><strong>Liczba zidentyfikowanych problemów:</strong> ${takIds.length}</div>
+    ${statsHtml}
   `;
 
   if (state.currentPdfUrl) {

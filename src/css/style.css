@@ -435,6 +435,19 @@ a:hover {
   user-select: none;
 }
 
+.ailment-ready-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  padding: 2px 7px;
+  border-radius: 2px;
+  user-select: none;
+}
+
 /* Styl dla wyszarzonej dolegliwości, gdy brakuje tabeli w bazie danych */
 .ailment-row.disabled-ailment {
   background-color: #f8fafc;
@@ -791,6 +804,168 @@ a:hover {
   color: var(--color-primary);
   text-align: left;
 }
+
+/* Statystyki podziału produktów w modalu */
+.modal-stats-container {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.modal-stats-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.modal-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 3px;
+  font-size: 12px;
+  border: 1px solid transparent;
+}
+
+.stat-icon {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.stat-label {
+  font-weight: 600;
+  flex: 1;
+}
+
+.stat-value {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.stat-zalecane {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.stat-dozwolone {
+  background-color: #f0f9ff;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
+.stat-ograniczone {
+  background-color: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.stat-zakazane {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+/* ==========================================================
+   Karta legendy klasyfikacji produktów (Sidebar)
+   ========================================================== */
+.legend-card {
+  margin-top: 25px;
+}
+
+.legend-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.legend-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 3px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.legend-badge {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 2px;
+  width: fit-content;
+}
+
+.legend-desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.legend-zalecane {
+  border-left: 3px solid #059669;
+}
+.legend-zalecane .legend-badge {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.legend-dozwolone {
+  border-left: 3px solid #0284c7;
+}
+.legend-dozwolone .legend-badge {
+  background-color: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.legend-ograniczone {
+  border-left: 3px solid #d97706;
+}
+.legend-ograniczone .legend-badge {
+  background-color: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.legend-zakazane {
+  border-left: 3px solid #dc2626;
+}
+.legend-zakazane .legend-badge {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.legend-priority-note {
+  font-size: 11.5px;
+  color: #475569;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 9px 11px;
+  border-radius: 2px;
+  line-height: 1.45;
+}
+
+.legend-priority-note em {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 
 .modal-actions-row {
   display: flex;
