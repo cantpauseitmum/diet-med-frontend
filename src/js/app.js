@@ -3,8 +3,8 @@
  * Obsługa formularza, 1-godzinnego cache'owania listy dolegliwości oraz pobierania raportu PDF.
  */
 
-const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v5';
-const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v5';
+const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v7';
+const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v7';
 const ONE_HOUR_MS = 60 * 60 * 1000; // 3600 sekund = 1 godzina
 
 // Stan aplikacji
@@ -12,7 +12,7 @@ const state = {
   dolegliwosci: [],
   answers: {}, // id -> 'tak' | 'nie' | 'nie_wiem'
   currentPdfUrl: null,
-  currentPdfFilename: 'ograniczenia_zywieniowe.pdf'
+  currentPdfFilename: 'Ograniczenia-Zywieniowe.pdf'
 };
 
 // Elementy DOM
@@ -169,7 +169,6 @@ function renderAilments(ailments) {
     row.innerHTML = `
       <div class="ailment-name-col">
         <div class="ailment-name">${escapeHtml(item.kod)}</div>
-        ${!isAvailable ? '<span class="ailment-status-badge" title="W bazie danych brakuje tabeli z produktami dla tej dolegliwości">Brak tabeli w bazie</span>' : '<span class="ailment-ready-badge" title="Tabela produktów dostępna w 4 kategoriach (Zalecane, Dozwolone, Ograniczone, Zakazane)">Baza aktywna</span>'}
       </div>
       <div class="options-group" role="radiogroup" aria-label="${escapeHtml(item.kod)}">
         <button 
@@ -346,7 +345,7 @@ async function handleFormSubmit(e) {
 
     const result = await res.json();
     state.currentPdfUrl = result.pdf_download_url || null;
-    state.currentPdfFilename = result.pdf_filename || 'ograniczenia_zywieniowe.pdf';
+    state.currentPdfFilename = result.pdf_filename || 'Ograniczenia-Zywieniowe.pdf';
 
     // Wyświetlenie modalu z przyciskiem do pobrania raportu (bez automatycznego pobierania)
     showResultModal(result, takIds);
@@ -376,7 +375,7 @@ function setSubmitLoading(isLoading) {
  * Wyświetla modal z podsumowaniem i opcją pobrania PDF
  */
 function showResultModal(result, takIds) {
-  const filename = state.currentPdfFilename || 'ograniczenia_zywieniowe.pdf';
+  const filename = state.currentPdfFilename || 'Ograniczenia-Zywieniowe.pdf';
   elements.modalMessage.innerHTML = `
     Twój spersonalizowany dokument <strong>${escapeHtml(filename)}</strong> został pomyślnie wygenerowany. 
     Raport zawiera zestawienie produktów podzielonych na 4 kategorie wg aktualnych wytycznych.
@@ -461,7 +460,7 @@ async function handleDownloadPdf(e) {
     const tempLink = document.createElement('a');
     tempLink.style.display = 'none';
     tempLink.href = blobUrl;
-    tempLink.download = state.currentPdfFilename || 'ograniczenia_zywieniowe.pdf';
+    tempLink.download = state.currentPdfFilename || 'Ograniczenia-Zywieniowe.pdf';
     document.body.appendChild(tempLink);
     tempLink.click();
 
