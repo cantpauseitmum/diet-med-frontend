@@ -3,8 +3,8 @@
  * Obsługa formularza, 1-godzinnego cache'owania listy dolegliwości oraz pobierania raportu PDF.
  */
 
-const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v4';
-const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v4';
+const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v5';
+const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v5';
 const ONE_HOUR_MS = 60 * 60 * 1000; // 3600 sekund = 1 godzina
 
 // Stan aplikacji
