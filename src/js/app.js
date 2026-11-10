@@ -12,7 +12,9 @@ const state = {
   dolegliwosci: [],
   answers: {}, // id -> 'tak' | 'nie' | 'nie_wiem'
   currentPdfUrl: null,
-  currentPdfFilename: 'Ograniczenia-Zywieniowe.pdf'
+  currentPdfFilename: 'Ograniczenia-Zywieniowe.pdf',
+  currentXlsxUrl: null,
+  currentXlsxFilename: 'Ograniczenia-Zywieniowe.xlsx'
 };
 
 // Elementy DOM
@@ -27,6 +29,7 @@ const elements = {
   modalMessage: document.getElementById('modalMessage'),
   modalDetails: document.getElementById('modalDetails'),
   downloadPdfBtn: document.getElementById('downloadPdfBtn'),
+  downloadXlsxBtn: document.getElementById('downloadXlsxBtn'),
   closeModalBtn: document.getElementById('closeModalBtn')
 };
 
@@ -68,6 +71,10 @@ function setupEventListeners() {
 
   if (elements.downloadPdfBtn) {
     elements.downloadPdfBtn.addEventListener('click', handleDownloadPdf);
+  }
+
+  if (elements.downloadXlsxBtn) {
+    elements.downloadXlsxBtn.addEventListener('click', handleDownloadXlsx);
   }
 
   elements.closeModalBtn.addEventListener('click', closeModal);
@@ -346,12 +353,14 @@ async function handleFormSubmit(e) {
     const result = await res.json();
     state.currentPdfUrl = result.pdf_download_url || null;
     state.currentPdfFilename = result.pdf_filename || 'Ograniczenia-Zywieniowe.pdf';
+    state.currentXlsxUrl = result.xlsx_download_url || null;
+    state.currentXlsxFilename = result.xlsx_filename || 'Ograniczenia-Zywieniowe.xlsx';
 
-    // Wyświetlenie modalu z przyciskiem do pobrania raportu (bez automatycznego pobierania)
+    // Wyświetlenie modalu z przyciskami do pobrania raportów
     showResultModal(result, takIds);
 
   } catch (err) {
-    console.error('Błąd generowania PDF:', err);
+    console.error('Błąd generowania raportów:', err);
     alert(`Wystąpił błąd podczas generowania raportu: ${err.message}`);
   } finally {
     setSubmitLoading(false);
@@ -365,20 +374,21 @@ function setSubmitLoading(isLoading) {
   elements.submitBtn.disabled = isLoading;
   const btnText = elements.submitBtn.querySelector('.btn-text');
   if (isLoading) {
-    btnText.textContent = 'Generowanie raportu PDF...';
+    btnText.textContent = 'Generowanie raportów (PDF & Excel)...';
   } else {
-    btnText.textContent = 'Generuj raport PDF';
+    btnText.textContent = 'Generuj raport (PDF & Excel)';
   }
 }
 
 /**
- * Wyświetla modal z podsumowaniem i opcją pobrania PDF
+ * Wyświetla modal z podsumowaniem i opcją pobrania PDF oraz Excel
  */
 function showResultModal(result, takIds) {
-  const filename = state.currentPdfFilename || 'Ograniczenia-Zywieniowe.pdf';
+  const pdfFilename = state.currentPdfFilename || 'Ograniczenia-Zywieniowe.pdf';
+  const xlsxFilename = state.currentXlsxFilename || 'Ograniczenia-Zywieniowe.xlsx';
   elements.modalMessage.innerHTML = `
-    Twój spersonalizowany dokument <strong>${escapeHtml(filename)}</strong> został pomyślnie wygenerowany. 
-    Raport zawiera zestawienie produktów podzielonych na 4 kategorie wg aktualnych wytycznych.
+    Twoje spersonalizowane dokumenty (<strong>${escapeHtml(pdfFilename)}</strong> oraz <strong>${escapeHtml(xlsxFilename)}</strong>) zostały pomyślnie przygotowane. 
+    Raport zawiera zestawienie produktów pogrupowanych w podsekcje żywieniowe (np. nabiał, pieczywo, warzywa) oraz posortowanych alfabetycznie.
   `;
 
   let statsHtml = '';
@@ -428,6 +438,15 @@ function showResultModal(result, takIds) {
     elements.downloadPdfBtn.style.display = 'none';
   }
 
+  if (state.currentXlsxUrl && elements.downloadXlsxBtn) {
+    elements.downloadXlsxBtn.style.display = 'inline-flex';
+    elements.downloadXlsxBtn.disabled = false;
+    const btnText = elements.downloadXlsxBtn.querySelector('.btn-download-text');
+    if (btnText) btnText.textContent = 'Pobierz arkusz Excel (.xlsx)';
+  } else if (elements.downloadXlsxBtn) {
+    elements.downloadXlsxBtn.style.display = 'none';
+  }
+
   elements.resultModal.classList.add('show');
   elements.resultModal.setAttribute('aria-hidden', 'false');
 }
@@ -475,6 +494,51 @@ async function handleDownloadPdf(e) {
     window.location.href = state.currentPdfUrl;
   } finally {
     elements.downloadPdfBtn.disabled = false;
+    if (btnText) btnText.textContent = originalText;
+  }
+}
+
+/**
+ * Obsługa pobierania wygenerowanego arkusza Excel (.xlsx) z poziomu modalu
+ */
+async function handleDownloadXlsx(e) {
+  if (e) e.preventDefault();
+
+  if (!state.currentXlsxUrl) {
+    alert('Brak adresu arkusza Excel. Wygeneruj raport ponownie.');
+    return;
+  }
+
+  const btnText = elements.downloadXlsxBtn.querySelector('.btn-download-text');
+  const originalText = btnText ? btnText.textContent : 'Pobierz arkusz Excel (.xlsx)';
+
+  try {
+    elements.downloadXlsxBtn.disabled = true;
+    if (btnText) btnText.textContent = 'Pobieranie arkusza...';
+
+    const res = await fetch(state.currentXlsxUrl);
+    if (!res.ok) throw new Error(`Błąd pobierania pliku (${res.status})`);
+
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    const tempLink = document.createElement('a');
+    tempLink.style.display = 'none';
+    tempLink.href = blobUrl;
+    tempLink.download = state.currentXlsxFilename || 'Ograniczenia-Zywieniowe.xlsx';
+    document.body.appendChild(tempLink);
+    tempLink.click();
+
+    setTimeout(() => {
+      document.body.removeChild(tempLink);
+      window.URL.revokeObjectURL(blobUrl);
+    }, 1000);
+
+  } catch (err) {
+    console.error('Błąd pobierania arkusza Excel:', err);
+    window.location.href = state.currentXlsxUrl;
+  } finally {
+    elements.downloadXlsxBtn.disabled = false;
     if (btnText) btnText.textContent = originalText;
   }
 }
