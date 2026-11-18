@@ -3,8 +3,8 @@
  * Obsługa formularza, 1-godzinnego cache'owania listy dolegliwości oraz pobierania raportu PDF.
  */
 
-const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v8';
-const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v8';
+const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v9';
+const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v9';
 const ONE_HOUR_MS = 60 * 60 * 1000; // 3600 sekund = 1 godzina
 
 // Stan aplikacji
@@ -149,7 +149,7 @@ async function fetchAilmentsFromBackend() {
 }
 
 /**
- * Renderuje wiersze dolegliwości w formularzu
+ * Renderuje wiersze dolegliwości w formularzu (jako bezpośrednio klikalne kafelki z checkboxem)
  */
 function renderAilments(ailments) {
   const cleanAilments = deduplicateAilments(ailments);
@@ -165,36 +165,44 @@ function renderAilments(ailments) {
     const row = document.createElement('div');
     row.className = 'ailment-row';
     row.id = `ailment-row-${item.id}`;
+    row.setAttribute('role', 'checkbox');
 
     if (!isAvailable) {
       row.classList.add('disabled-ailment');
+      row.setAttribute('aria-disabled', 'true');
+      row.setAttribute('tabindex', '-1');
+      row.setAttribute('title', 'Dolegliwość niedostępna - brak tabeli w bazie danych');
+    } else {
+      row.setAttribute('tabindex', '0');
     }
 
     const isTak = isAvailable && state.answers[item.id] === 'tak';
     if (isTak) row.classList.add('selected-tak');
+    row.setAttribute('aria-checked', isTak ? 'true' : 'false');
 
     row.innerHTML = `
-      <div class="ailment-name-col">
-        <div class="ailment-name">${escapeHtml(item.kod)}</div>
-      </div>
-      <div class="options-group">
-        <button 
-          type="button" 
-          class="option-btn option-btn-tak ${isTak ? 'active' : ''}" 
-          data-id="${item.id}" 
-          data-value="tak"
-          aria-pressed="${isTak ? 'true' : 'false'}"
-          ${!isAvailable ? 'disabled title="Dolegliwość niedostępna - brak tabeli w bazie danych"' : ''}
-        >
-          <span class="btn-check-icon">${isTak ? '✓ ' : ''}</span>Tak
-        </button>
+      <div class="ailment-row-content">
+        <span class="ailment-checkbox-custom ${isTak ? 'checked' : ''}" aria-hidden="true">
+          <svg viewBox="0 0 20 20" class="check-svg" fill="currentColor">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+        </span>
+        <div class="ailment-name-col">
+          <div class="ailment-name">${escapeHtml(item.kod)}</div>
+        </div>
       </div>
     `;
 
-    // Obsługa kliknięcia (kliknięcie w wiersz lub przycisk przełącza wybór "Tak")
+    // Obsługa kliknięcia myszą oraz klawiatury (Enter / Spacja)
     if (isAvailable) {
       row.addEventListener('click', () => {
         toggleAilment(item.id, row);
+      });
+      row.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          toggleAilment(item.id, row);
+        }
       });
     }
 
@@ -220,19 +228,15 @@ function toggleAilment(id, rowElement) {
     delete state.answers[id];
   }
 
-  // Aktualizacja klas wiersza
+  // Aktualizacja klas wiersza i atrybutu ARIA
   rowElement.classList.toggle('selected-tak', isTak);
+  rowElement.setAttribute('aria-checked', isTak ? 'true' : 'false');
   rowElement.classList.remove('unanswered-error');
 
-  // Aktualizacja przycisku wiersza
-  const btn = rowElement.querySelector('.option-btn-tak');
-  if (btn) {
-    btn.classList.toggle('active', isTak);
-    btn.setAttribute('aria-pressed', isTak ? 'true' : 'false');
-    const checkIcon = btn.querySelector('.btn-check-icon');
-    if (checkIcon) {
-      checkIcon.textContent = isTak ? '✓ ' : '';
-    }
+  // Aktualizacja wskaźnika checkboxa
+  const checkbox = rowElement.querySelector('.ailment-checkbox-custom');
+  if (checkbox) {
+    checkbox.classList.toggle('checked', isTak);
   }
 
   // Jeśli widoczny był błąd walidacji i wybrano co najmniej jedno Tak, ukryj go
