@@ -3,14 +3,14 @@
  * Obsługa formularza, 1-godzinnego cache'owania listy dolegliwości oraz pobierania raportu PDF.
  */
 
-const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v7';
-const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v7';
+const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v8';
+const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v8';
 const ONE_HOUR_MS = 60 * 60 * 1000; // 3600 sekund = 1 godzina
 
 // Stan aplikacji
 const state = {
   dolegliwosci: [],
-  answers: {}, // id -> 'tak' | 'nie' | 'nie_wiem'
+  answers: {}, // id -> 'tak' (brak wpisu oznacza 'nie')
   currentPdfUrl: null,
   currentPdfFilename: 'Ograniczenia-Zywieniowe.pdf',
   currentXlsxUrl: null,
@@ -170,49 +170,31 @@ function renderAilments(ailments) {
       row.classList.add('disabled-ailment');
     }
 
-    const currentVal = isAvailable ? (state.answers[item.id] || null) : null;
-    if (currentVal === 'tak') row.classList.add('selected-tak');
+    const isTak = isAvailable && state.answers[item.id] === 'tak';
+    if (isTak) row.classList.add('selected-tak');
 
     row.innerHTML = `
       <div class="ailment-name-col">
         <div class="ailment-name">${escapeHtml(item.kod)}</div>
       </div>
-      <div class="options-group" role="radiogroup" aria-label="${escapeHtml(item.kod)}">
+      <div class="options-group">
         <button 
           type="button" 
-          class="option-btn ${currentVal === 'tak' ? 'active' : ''}" 
+          class="option-btn option-btn-tak ${isTak ? 'active' : ''}" 
           data-id="${item.id}" 
           data-value="tak"
-          aria-checked="${currentVal === 'tak'}"
+          aria-pressed="${isTak ? 'true' : 'false'}"
           ${!isAvailable ? 'disabled title="Dolegliwość niedostępna - brak tabeli w bazie danych"' : ''}
-        >Tak</button>
-        <button 
-          type="button" 
-          class="option-btn ${currentVal === 'nie' ? 'active' : ''}" 
-          data-id="${item.id}" 
-          data-value="nie"
-          aria-checked="${currentVal === 'nie'}"
-          ${!isAvailable ? 'disabled title="Dolegliwość niedostępna - brak tabeli w bazie danych"' : ''}
-        >Nie</button>
-        <button 
-          type="button" 
-          class="option-btn ${currentVal === 'nie_wiem' ? 'active' : ''}" 
-          data-id="${item.id}" 
-          data-value="nie_wiem"
-          aria-checked="${currentVal === 'nie_wiem'}"
-          ${!isAvailable ? 'disabled title="Dolegliwość niedostępna - brak tabeli w bazie danych"' : ''}
-        >Nie wiem</button>
+        >
+          <span class="btn-check-icon">${isTak ? '✓ ' : ''}</span>Tak
+        </button>
       </div>
     `;
 
-    // Obsługa kliknięcia przycisków tylko dla dostępnych dolegliwości
+    // Obsługa kliknięcia (kliknięcie w wiersz lub przycisk przełącza wybór "Tak")
     if (isAvailable) {
-      const buttons = row.querySelectorAll('.option-btn');
-      buttons.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const val = btn.getAttribute('data-value');
-          handleOptionSelect(item.id, val, row);
-        });
+      row.addEventListener('click', () => {
+        toggleAilment(item.id, row);
       });
     }
 
@@ -223,43 +205,41 @@ function renderAilments(ailments) {
 }
 
 /**
- * Zwraca listę aktywnych (niewyszarzonych) dolegliwości, które nie zostały jeszcze zaznaczone
+ * Przełącza wybór dolegliwości na "Tak" lub usuwa zaznaczenie (domyślnie "Nie")
  */
-function getUnansweredAvailableAilments() {
-  const availableAilments = state.dolegliwosci.filter(a => a.dostepna !== false);
-  return availableAilments.filter(a => !state.answers[a.id]);
-}
-
-/**
- * Zaznaczenie opcji Tak / Nie / Nie wiem
- */
-function handleOptionSelect(id, value, rowElement) {
+function toggleAilment(id, rowElement) {
   const item = state.dolegliwosci.find(a => a.id === id);
   if (item && item.dostepna === false) return; // Ochrona przed wyborem niedostępnej pozycji
 
-  state.answers[id] = value;
+  const wasTak = state.answers[id] === 'tak';
+  const isTak = !wasTak;
 
-  // Usunięcie wyróżnienia błędu z tego wiersza
+  if (isTak) {
+    state.answers[id] = 'tak';
+  } else {
+    delete state.answers[id];
+  }
+
+  // Aktualizacja klas wiersza
+  rowElement.classList.toggle('selected-tak', isTak);
   rowElement.classList.remove('unanswered-error');
 
-  // Aktualizacja klas przycisków w wierszu
-  const buttons = rowElement.querySelectorAll('.option-btn');
-  buttons.forEach((b) => {
-    const isSelected = b.getAttribute('data-value') === value;
-    b.classList.toggle('active', isSelected);
-    b.setAttribute('aria-checked', isSelected ? 'true' : 'false');
-  });
+  // Aktualizacja przycisku wiersza
+  const btn = rowElement.querySelector('.option-btn-tak');
+  if (btn) {
+    btn.classList.toggle('active', isTak);
+    btn.setAttribute('aria-pressed', isTak ? 'true' : 'false');
+    const checkIcon = btn.querySelector('.btn-check-icon');
+    if (checkIcon) {
+      checkIcon.textContent = isTak ? '✓ ' : '';
+    }
+  }
 
-  // Stylizacja wiersza jeśli "Tak"
-  rowElement.classList.toggle('selected-tak', value === 'tak');
-
-  // Jeśli widoczny był komunikat błędu, aktualizujemy liczbę pozostałych pytań lub go ukrywamy
+  // Jeśli widoczny był błąd walidacji i wybrano co najmniej jedno Tak, ukryj go
   if (elements.formValidationError && elements.formValidationError.style.display !== 'none') {
-    const remaining = getUnansweredAvailableAilments();
-    if (remaining.length === 0) {
+    const hasAnyTak = Object.values(state.answers).some(v => v === 'tak');
+    if (hasAnyTak) {
       elements.formValidationError.style.display = 'none';
-    } else if (elements.unansweredCount) {
-      elements.unansweredCount.textContent = remaining.length;
     }
   }
 
@@ -284,39 +264,10 @@ function updateSelectedCount() {
 }
 
 /**
- * Obsługa wysyłki formularza i generowania PDF
+ * Obsługa wysyłki formularza i generowania PDF oraz XLSX
  */
 async function handleFormSubmit(e) {
   e.preventDefault();
-
-  // Test walidacji: wszystkie aktywne (niewyszarzone) dolegliwości muszą być określone (Tak, Nie lub Nie wiem)
-  const unanswered = getUnansweredAvailableAilments();
-  if (unanswered.length > 0) {
-    // Wyróżnij wszystkie nieuzupełnione aktywne wiersze
-    unanswered.forEach((item) => {
-      const row = document.getElementById(`ailment-row-${item.id}`);
-      if (row) row.classList.add('unanswered-error');
-    });
-
-    // Wyświetl komunikat walidacyjny
-    if (elements.formValidationError) {
-      if (elements.unansweredCount) elements.unansweredCount.textContent = unanswered.length;
-      elements.formValidationError.style.display = 'flex';
-    }
-
-    // Płynnie przewiń stronę do pierwszego nieuzupełnionego pytania
-    const firstUnansweredEl = document.getElementById(`ailment-row-${unanswered[0].id}`);
-    if (firstUnansweredEl) {
-      firstUnansweredEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-
-    return;
-  }
-
-  // Jeśli walidacja przeszła, ukryj komunikat błędu
-  if (elements.formValidationError) {
-    elements.formValidationError.style.display = 'none';
-  }
 
   const availableIds = new Set(
     state.dolegliwosci
@@ -328,6 +279,20 @@ async function handleFormSubmit(e) {
   const takIds = Object.keys(state.answers)
     .filter(id => state.answers[id] === 'tak' && availableIds.has(Number(id)))
     .map(id => Number(id));
+
+  // Walidacja: użytkownik musi zaznaczyć co najmniej jedną dolegliwość (Tak)
+  if (takIds.length === 0) {
+    if (elements.formValidationError) {
+      elements.formValidationError.style.display = 'flex';
+      elements.formValidationError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return;
+  }
+
+  // Jeśli walidacja przeszła, ukryj komunikat błędu
+  if (elements.formValidationError) {
+    elements.formValidationError.style.display = 'none';
+  }
 
   const payload = {
     dolegliwosci: takIds
