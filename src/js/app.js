@@ -1,10 +1,10 @@
 /**
- * Diet-Med • Test Doboru Produktów dla Zdrowia (TDP)
+ * Diet-Med App • Test Doboru Produktów dla Zdrowia (TDP)
  * Obsługa formularza, 1-godzinnego cache'owania listy dolegliwości oraz pobierania raportu PDF.
  */
 
-const CACHE_KEY_DATA = 'diet_med_tdp_dolegliwosci_cache_v9';
-const CACHE_KEY_EXPIRY = 'diet_med_tdp_expiry_v9';
+const CACHE_KEY_DATA = 'diet_med_app_dolegliwosci_cache_v10';
+const CACHE_KEY_EXPIRY = 'diet_med_app_expiry_v10';
 const ONE_HOUR_MS = 60 * 60 * 1000; // 3600 sekund = 1 godzina
 
 // Stan aplikacji

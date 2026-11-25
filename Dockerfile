@@ -1,7 +1,7 @@
 FROM nginx:alpine
 
 LABEL maintainer="Diet-Med Team"
-LABEL description="Frontend web application container for Diet-Med TDP"
+LABEL description="Frontend web application container for Diet-Med App"
 
 # Kopiowanie plików statycznych aplikacji
 COPY src/ /usr/share/nginx/html/

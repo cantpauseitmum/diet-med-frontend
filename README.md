@@ -1,6 +1,6 @@
-# Diet-Med Frontend (`diet-med-frontend`)
+# Diet-Med App Frontend (`diet-med-frontend`)
 
-Interfejs webowy dla pacjentów systemu **Diet-Med** (Test Doboru Produktów dla Zdrowia - TDP), serwowany za pomocą zoptymalizowanego kontenera Nginx i ostylowany zgodnie z motywem strony **diet-med.pl**.
+Interfejs webowy dla pacjentów systemu **Diet-Med App** (Test Doboru Produktów dla Zdrowia - TDP), serwowany za pomocą zoptymalizowanego kontenera Nginx i ostylowany zgodnie z motywem strony **diet-med.pl**.
 
 ## Funkcjonalności
 - **Stylizacja zgodna z diet-med.pl (Divi Theme)**:
